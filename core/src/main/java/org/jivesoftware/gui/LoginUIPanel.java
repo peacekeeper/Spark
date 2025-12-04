@@ -199,6 +199,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         ResourceUtils.resButton(btnCreateAccount, Res.getString("label.accounts"));
         ResourceUtils.resButton(cbLoginInvisible, Res.getString("checkbox.login.as.invisible"));
         ResourceUtils.resButton(cbAnonymous, Res.getString("checkbox.login.anonymously"));
+        ResourceUtils.resButton(cbDIDChallenge, Res.getString("checkbox.login.did"));
         ResourceUtils.resButton(btnReset, Res.getString("label.passwordreset"));
         configureVisibility();
 
@@ -408,6 +409,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         cbAutoLogin = new javax.swing.JCheckBox();
         cbLoginInvisible = new javax.swing.JCheckBox();
         cbAnonymous = new javax.swing.JCheckBox();
+        cbDIDChallenge = new javax.swing.JCheckBox();
         pnlBtns = new javax.swing.JPanel();
         btnLogin = new javax.swing.JButton();
         btnCreateAccount = new javax.swing.JButton();
@@ -500,6 +502,11 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         cbAnonymous.setPreferredSize(new java.awt.Dimension(200, 20));
         pnlCheckboxes.add(cbAnonymous);
 
+        cbDIDChallenge.setBackground(new java.awt.Color(255, 255, 255));
+        cbDIDChallenge.setText("Login with DID");
+        cbDIDChallenge.setPreferredSize(new java.awt.Dimension(200, 20));
+        pnlCheckboxes.add(cbDIDChallenge);
+
         pnlCenter.add(pnlCheckboxes);
 
         pnlBtns.setBackground(new java.awt.Color(255, 255, 255));
@@ -585,6 +592,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
     private javax.swing.JButton btnLogin;
     private javax.swing.JButton btnReset;
     private javax.swing.JCheckBox cbAnonymous;
+    private javax.swing.JCheckBox cbDIDChallenge;
     private javax.swing.JCheckBox cbAutoLogin;
     private javax.swing.JCheckBox cbLoginInvisible;
     private javax.swing.JCheckBox cbSavePassword;
@@ -744,6 +752,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         final XMPPTCPConnectionConfiguration.Builder builder = XMPPTCPConnectionConfiguration.builder()
                 .setUsernameAndPassword(loginUsername, loginPassword)
                 .setXmppDomain(xmppDomain)
+                .addEnabledSaslMechanism("DID-CHALLENGE")
                 .setPort(port)
                 .setSendPresence(false)
                 .setCompressionEnabled(localPref.isCompressionEnabled())
