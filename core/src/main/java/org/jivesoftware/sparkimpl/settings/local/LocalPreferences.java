@@ -376,6 +376,25 @@ public class LocalPreferences {
         props.setProperty("loginAnonymously", Boolean.toString(loginAnonymously));
     }
 
+    /**
+     * Return true if Login with DID is on.
+     *
+     * @return true if Login with DID is on.
+     */
+    public boolean isLoginWithDID() {
+        return Boolean.parseBoolean(props.getProperty("loginWithDID",
+            "false"));
+    }
+
+    /**
+     * Turn on or off Login with DID option.
+     *
+     * @param loginWithDID true if Login with DID should be on.
+     */
+    public void setLoginWithDID(boolean loginWithDID) {
+        props.setProperty("loginWithDID", Boolean.toString(loginWithDID));
+    }
+
 	/**
 	 * Return true if the password should be encoded and persisted.
 	 *
@@ -1404,6 +1423,14 @@ public class LocalPreferences {
 
     public void setAnonymousLogin(boolean ccAnonymousLogin) {
         props.setProperty("ccAnonymousLogin", Boolean.toString(ccAnonymousLogin));
+    }
+
+    public boolean getWithDIDLogin() {
+        return Boolean.parseBoolean(props.getProperty("ccDIDLogin","true"));
+    }
+
+    public void setDIDLogin(boolean ccDIDLogin) {
+        props.setProperty("ccDIDLogin", Boolean.toString(ccDIDLogin));
     }
 
     public boolean getPswdAutologin() {

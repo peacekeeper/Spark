@@ -95,6 +95,7 @@ public class Default {
     public static final String HIDE_SAVE_PASSWORD_AND_AUTO_LOGIN = "HIDE_SAVE_PASSWORD_AND_AUTO_LOGIN";
     public static final String HIDE_LOGIN_AS_INVISIBLE = "HIDE_LOGIN_AS_INVISIBLE";
     public static final String HIDE_LOGIN_ANONYMOUSLY = "HIDE_LOGIN_ANONYMOUSLY";
+    public static final String HIDE_LOGIN_WITH_DID = "HIDE_LOGIN_WITH_DID";
     public static final String MAINTENANCE_FILE_PATH = "MAINTENANCE_FILE_PATH";
     public static final String HIDE_START_A_CHAT = "HIDE_START_A_CHAT";  
     public static final String ACCEPT_EXPIRED = "ACCEPT_EXPIRED";

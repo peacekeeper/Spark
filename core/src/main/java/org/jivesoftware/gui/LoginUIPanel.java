@@ -36,12 +36,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Principal;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,6 +73,8 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.text.JTextComponent;
+
+import demo.sasl.client.debug.SaslClientDebug;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -139,7 +136,8 @@ import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.stringprep.XmppStringprepException;
 import org.jxmpp.util.XmppStringUtils;
 import org.minidns.dnsname.DnsName;
-import org.minidns.record.A;
+import sasl.mechanism.did.DIDChallengeSaslProvider;
+import sasl.xmpp.client.SASLDIDChallengeJavaXMechanism;
 
 /**
  * Dialog to log in a user into the XMPP server.
@@ -199,7 +197,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         ResourceUtils.resButton(btnCreateAccount, Res.getString("label.accounts"));
         ResourceUtils.resButton(cbLoginInvisible, Res.getString("checkbox.login.as.invisible"));
         ResourceUtils.resButton(cbAnonymous, Res.getString("checkbox.login.anonymously"));
-        ResourceUtils.resButton(cbDIDChallenge, Res.getString("checkbox.login.did"));
+        ResourceUtils.resButton(cbWithDID, Res.getString("checkbox.login.with.did"));
         ResourceUtils.resButton(btnReset, Res.getString("label.passwordreset"));
         configureVisibility();
 
@@ -208,6 +206,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         cbAutoLogin.setOpaque(false);
         cbLoginInvisible.setOpaque(false);
         cbAnonymous.setOpaque(false);
+        cbWithDID.setOpaque(false);
         // btnReset.setVisible(false);
 
         // Add button but disable the login button initially
@@ -215,6 +214,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         cbAutoLogin.addActionListener(this);
         cbLoginInvisible.addActionListener(this);
         cbAnonymous.addActionListener(this);
+        cbWithDID.addActionListener(this);
 
         // Add KeyListener
         tfUsername.addKeyListener(this);
@@ -286,8 +286,9 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         cbAutoLogin.setSelected(localPref.isAutoLogin());
         cbLoginInvisible.setSelected(localPref.isLoginAsInvisible());
         cbAnonymous.setSelected(localPref.isLoginAnonymously());
-        tfUsername.setEnabled(!cbAnonymous.isSelected());
-        tfPassword.setEnabled(!cbAnonymous.isSelected());
+        cbWithDID.setSelected(localPref.isLoginWithDID());
+        tfUsername.setEnabled(!cbAnonymous.isSelected() && !cbWithDID.isSelected());
+        tfPassword.setEnabled(!cbAnonymous.isSelected() && !cbWithDID.isSelected());
         //Add clear button for username,password and domain field
         tfUsername.putClientProperty("JTextField.showClearButton",true);
         tfDomain.putClientProperty("JTextField.showClearButton",true);
@@ -368,6 +369,12 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
             height = height + 10;
         }
 
+        // Add option to hide "Login with DID" selection on the login screen
+        if (Default.getBoolean(Default.HIDE_LOGIN_WITH_DID) || !localPref.getWithDIDLogin()) {
+            pnlCheckboxes.remove(cbWithDID);
+            height = height + 10;
+        }
+
         if (Default.getBoolean(Default.ACCOUNT_DISABLED) || !localPref.getAccountsReg()) {
             pnlBtns.remove(btnCreateAccount);
             height = height + 15;
@@ -409,7 +416,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         cbAutoLogin = new javax.swing.JCheckBox();
         cbLoginInvisible = new javax.swing.JCheckBox();
         cbAnonymous = new javax.swing.JCheckBox();
-        cbDIDChallenge = new javax.swing.JCheckBox();
+        cbWithDID = new javax.swing.JCheckBox();
         pnlBtns = new javax.swing.JPanel();
         btnLogin = new javax.swing.JButton();
         btnCreateAccount = new javax.swing.JButton();
@@ -502,10 +509,10 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         cbAnonymous.setPreferredSize(new java.awt.Dimension(200, 20));
         pnlCheckboxes.add(cbAnonymous);
 
-        cbDIDChallenge.setBackground(new java.awt.Color(255, 255, 255));
-        cbDIDChallenge.setText("Login with DID");
-        cbDIDChallenge.setPreferredSize(new java.awt.Dimension(200, 20));
-        pnlCheckboxes.add(cbDIDChallenge);
+        cbWithDID.setBackground(new java.awt.Color(255, 255, 255));
+        cbWithDID.setText("Login with DID");
+        cbWithDID.setPreferredSize(new java.awt.Dimension(200, 20));
+        pnlCheckboxes.add(cbWithDID);
 
         pnlCenter.add(pnlCheckboxes);
 
@@ -592,7 +599,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
     private javax.swing.JButton btnLogin;
     private javax.swing.JButton btnReset;
     private javax.swing.JCheckBox cbAnonymous;
-    private javax.swing.JCheckBox cbDIDChallenge;
+    private javax.swing.JCheckBox cbWithDID;
     private javax.swing.JCheckBox cbAutoLogin;
     private javax.swing.JCheckBox cbLoginInvisible;
     private javax.swing.JCheckBox cbSavePassword;
@@ -752,7 +759,6 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         final XMPPTCPConnectionConfiguration.Builder builder = XMPPTCPConnectionConfiguration.builder()
                 .setUsernameAndPassword(loginUsername, loginPassword)
                 .setXmppDomain(xmppDomain)
-                .addEnabledSaslMechanism("DID-CHALLENGE")
                 .setPort(port)
                 .setSendPresence(false)
                 .setCompressionEnabled(localPref.isCompressionEnabled())
@@ -789,6 +795,14 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         if (localPref.isLoginAnonymously() && !localPref.isSSOEnabled()) {
             //later login() is called without arguments
             builder.performSaslAnonymousAuthentication();
+        }
+
+        if (localPref.isLoginWithDID()) {
+            //later login() is called without arguments
+            SASLAuthentication.unregisterSASLMechanism(SASLDIDChallengeJavaXMechanism.class.getName());
+            SASLAuthentication.registerSASLMechanism(new SASLDIDChallengeJavaXMechanism(true));
+            Log.debug("SASL mechanisms: " + SASLAuthentication.getRegisterdSASLMechanisms());
+            builder.addEnabledSaslMechanism("DID-CHALLENGE");
         }
 
         // TODO These were used in Smack 3. Find Smack 4 alternative.
@@ -953,6 +967,10 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
             tfUsername.setEnabled(!cbAnonymous.isSelected());
             tfPassword.setEnabled(!cbAnonymous.isSelected());
             validateDialog();
+        } else if (e.getSource() == cbWithDID) {
+            tfUsername.setEnabled(!cbWithDID.isSelected());
+            tfPassword.setEnabled(!cbWithDID.isSelected());
+            validateDialog();
         }
     }
 
@@ -971,7 +989,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
                 try {
                     tfPassword.setText(localPref.getPasswordForUser(getBareJid()));
                     if (tfPassword.getPassword().length < 1) {
-                        btnLogin.setEnabled(cbAnonymous.isSelected());
+                        btnLogin.setEnabled(cbAnonymous.isSelected() || cbWithDID.isSelected());
                     } else {
                         btnLogin.setEnabled(true);
                     }
@@ -1019,7 +1037,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         if (SmackConfiguration.DEBUG && !EventQueue.isDispatchThread()) {
             throw new IllegalStateException("Must be called on the Event Dispatcher Thread (but was not)");
         }
-        btnLogin.setEnabled(cbAnonymous.isSelected()
+        btnLogin.setEnabled(cbAnonymous.isSelected() || cbWithDID.isSelected()
                 || ModelUtil.hasLength(getUsername())
                 && (ModelUtil.hasLength(getPassword()) || localPref.isSSOEnabled())
                 && ModelUtil.hasLength(getServerName()));
@@ -1072,10 +1090,10 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
 
         // Need to set both editable and enabled for best behavior.
         tfUsername.setEditable(available);
-        tfUsername.setEnabled(available && !cbAnonymous.isSelected());
+        tfUsername.setEnabled(available && !cbAnonymous.isSelected() && !cbWithDID.isSelected());
 
         tfPassword.setEditable(available);
-        tfPassword.setEnabled(available && !cbAnonymous.isSelected());
+        tfPassword.setEnabled(available && !cbAnonymous.isSelected() && !cbWithDID.isSelected());
 
         if (Default.getBoolean(Default.HOST_NAME_CHANGE_DISABLED) || !localPref.getHostNameChange()) {
             tfDomain.setEditable(false);
@@ -1131,6 +1149,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
             //serverLabel.setVisible(true);
             cbLoginInvisible.setVisible(true);
             cbAnonymous.setVisible(false);
+            cbWithDID.setVisible(false);
 
             if (localPref.getDebug()) {
                 System.setProperty("java.security.krb5.debug", "true");
@@ -1208,6 +1227,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
             tfDomain.setVisible(true);
             cbLoginInvisible.setVisible(true);
             cbAnonymous.setVisible(true);
+            cbWithDID.setSelected(true);
 
             Configuration.setConfiguration(null);
 
@@ -1249,6 +1269,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
 
                 localPref.setLoginAsInvisible(cbLoginInvisible.isSelected());
                 localPref.setLoginAnonymously(cbAnonymous.isSelected());
+                localPref.setLoginWithDID(cbWithDID.isSelected());
                 savePasswordAfterSuccessfulLogin.set(cbSavePassword.isSelected());
                 autoLogin.set(cbAutoLogin.isSelected());
             });
@@ -1267,6 +1288,10 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
 
             if (localPref.isLoginAnonymously() && !localPref.isSSOEnabled()) {
                 // ConnectionConfiguration.performSaslAnonymousAuthentication() used earlier in connection configuration builder,
+                // so now we can just login()
+                connection.login();
+            } else if (localPref.isLoginWithDID() && !localPref.isSSOEnabled()) {
+                // ConnectionConfiguration.addEnabledSaslMechanism() used earlier in connection configuration builder,
                 // so now we can just login()
                 connection.login();
             } else {
@@ -1712,6 +1737,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
             localPref.setHostNameChange(Enterprise.containsFeature(Enterprise.HOST_NAME_FEATURE));
             localPref.setInvisibleLogin(Enterprise.containsFeature(Enterprise.INVISIBLE_LOGIN_FEATURE));
             localPref.setAnonymousLogin(Enterprise.containsFeature(Enterprise.ANONYMOUS_LOGIN_FEATURE));
+            localPref.setLoginWithDID(Enterprise.containsFeature(Enterprise.WITH_DID_LOGIN_FEATURE));
             localPref.setPswdAutologin(Enterprise.containsFeature(Enterprise.SAVE_PASSWORD_FEATURE));
             if (Enterprise.containsFeature(Enterprise.HOSTNAME_AS_RESOURCE_FEATURE) != Enterprise.containsFeature(Enterprise.VERSION_AS_RESOURCE_FEATURE)) {
                 localPref.setUseHostnameAsResource(Enterprise.containsFeature(Enterprise.HOSTNAME_AS_RESOURCE_FEATURE));
@@ -1753,4 +1779,16 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         SettingsManager.saveSettings();
     }
 
+    /*
+     * Support for DID-CHALLENGE
+     */
+
+
+    static {
+        Security.addProvider(new DIDChallengeSaslProvider());
+    }
+
+    static {
+        SaslClientDebug.logSaslClientFactoriesAndMechanisms();
+    }
 }
