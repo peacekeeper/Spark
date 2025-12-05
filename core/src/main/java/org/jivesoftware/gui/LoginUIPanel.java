@@ -131,7 +131,9 @@ import org.jivesoftware.sparkimpl.settings.JiveInfo;
 import org.jivesoftware.sparkimpl.settings.local.LocalPreferences;
 import org.jivesoftware.sparkimpl.settings.local.SettingsManager;
 import org.jxmpp.jid.DomainBareJid;
+import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.impl.JidCreate;
+import org.jxmpp.jid.impl.LocalAndDomainpartJid;
 import org.jxmpp.jid.parts.Resourcepart;
 import org.jxmpp.stringprep.XmppStringprepException;
 import org.jxmpp.util.XmppStringUtils;
@@ -800,9 +802,10 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         if (localPref.isLoginWithDID()) {
             //later login() is called without arguments
             SASLAuthentication.unregisterSASLMechanism(SASLDIDChallengeJavaXMechanism.class.getName());
-            SASLAuthentication.registerSASLMechanism(new SASLDIDChallengeJavaXMechanism(true));
+            SASLAuthentication.registerSASLMechanism(new SASLDIDChallengeJavaXMechanism(false));
             Log.debug("SASL mechanisms: " + SASLAuthentication.getRegisterdSASLMechanisms());
             builder.addEnabledSaslMechanism("DID-CHALLENGE");
+            builder.allowEmptyOrNullUsernames();
         }
 
         // TODO These were used in Smack 3. Find Smack 4 alternative.
