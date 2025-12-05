@@ -1084,6 +1084,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
         cbAutoLogin.setEnabled(available);
         cbLoginInvisible.setEnabled(available);
         cbAnonymous.setEnabled(available);
+        cbWithDID.setEnabled(available);
         btnLogin.setEnabled(available);
         btnAdvanced.setEnabled(available);
         btnCreateAccount.setEnabled(available);
@@ -1737,7 +1738,7 @@ public class LoginUIPanel extends javax.swing.JPanel implements KeyListener, Act
             localPref.setHostNameChange(Enterprise.containsFeature(Enterprise.HOST_NAME_FEATURE));
             localPref.setInvisibleLogin(Enterprise.containsFeature(Enterprise.INVISIBLE_LOGIN_FEATURE));
             localPref.setAnonymousLogin(Enterprise.containsFeature(Enterprise.ANONYMOUS_LOGIN_FEATURE));
-            localPref.setLoginWithDID(Enterprise.containsFeature(Enterprise.WITH_DID_LOGIN_FEATURE));
+            localPref.setWithDIDLogin(Enterprise.containsFeature(Enterprise.WITH_DID_LOGIN_FEATURE));
             localPref.setPswdAutologin(Enterprise.containsFeature(Enterprise.SAVE_PASSWORD_FEATURE));
             if (Enterprise.containsFeature(Enterprise.HOSTNAME_AS_RESOURCE_FEATURE) != Enterprise.containsFeature(Enterprise.VERSION_AS_RESOURCE_FEATURE)) {
                 localPref.setUseHostnameAsResource(Enterprise.containsFeature(Enterprise.HOSTNAME_AS_RESOURCE_FEATURE));

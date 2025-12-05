@@ -1426,11 +1426,11 @@ public class LocalPreferences {
     }
 
     public boolean getWithDIDLogin() {
-        return Boolean.parseBoolean(props.getProperty("ccDIDLogin","true"));
+        return Boolean.parseBoolean(props.getProperty("ccWithDIDLogin","true"));
     }
 
-    public void setDIDLogin(boolean ccDIDLogin) {
-        props.setProperty("ccDIDLogin", Boolean.toString(ccDIDLogin));
+    public void setWithDIDLogin(boolean ccWithDIDLogin) {
+        props.setProperty("ccWithDIDLogin", Boolean.toString(ccWithDIDLogin));
     }
 
     public boolean getPswdAutologin() {
